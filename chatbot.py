@@ -5,6 +5,7 @@ Chatbot script for prompting using ChatGPT; using pn for GUI
 # Installing dependencies
 import os
 import openai
+import panel as pn
 from dotenv import load_dotenv, find_dotenv
 
 # read local .env file
@@ -70,7 +71,7 @@ def collect_messages(_):
     pannels.append(pn.Row('Assistant:', pn.pane.Markdown(response, width=600, style={'background-color': '#F6F6F6'})))
     return pn.Column(*panels)
 
-import panel as pn
+###### Python Script ######
 pn.extension()
 
 panels = []
