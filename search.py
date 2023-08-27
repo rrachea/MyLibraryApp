@@ -17,11 +17,12 @@ Object = {
 }
 """
 
-
 # load datasets
-physical_df = pd.read_excel('datasets\Library Physical Items & Loan data.xlsx')
-online_df = pd.read_excel('datasets\Active E-Collection.xlsx')
-glo_df = pd.read_excel('datasets\Scores glo2 data.xlsx')
+physical_df = pd.read_excel('./datasets/Physical.xlsx')
+online_df = pd.read_excel('./datasets/Online.xlsx')
+glo_df = pd.read_excel('./datasets/GLO.xlsx')
+# print("Datasets loaded")
+# print(glo_df.head())
 
 app = Flask(__name__)
 @app.route('/api/data', methods=['GET'])
@@ -51,4 +52,4 @@ def search_db(obj):
             return None
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True, port=5000)

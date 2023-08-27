@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { MY_API_KEY } from '@env';
-
+import callPythonFunction from "./callPythonFunction";
 
 // const API_URL = 'https://api.openai.com/v1/engines/text-davinci-002/completions';
 
@@ -14,18 +14,51 @@ export default function App() {
   const [messages, setMessages] = useState([
     {
       role: 'system',
-      content: 'You are SmooBot, an automated ChatBot meant to serve as an interactive Library Management service. \n You will follow the steps accordingly whenever you meet a customer: \n 1. Introduce yourself in a kind and polite manner. \n 3. Ask the customer for their name and always refer to them by their name. \n 4. Ask them what they would like to do. \n ',
-    },
-  ]);
-  const API_URL = 'https://api.openai.com/v1/chat/completions';
-  const API_KEY = MY_API_KEY;
+      content: `
+      You are SmooBot, an automated ChatBot meant to serve as an interactive Library Management service.
+      You will follow the steps accordingly whenever you meet a customer:
+      1. Introduce yourself in a kind and polite manner.
+      3. Ask the customer for their name and always refer to them by their name.
+      4. Ask them if they want to ask questions or search the library database.
+      5. If they want to search the library database, ask them if they want to check their graduate learning outcome results or find a specific item.
+      6. If they want to check their graduate learning outcome, ask for their student id.
+      7. If they want to find a specific item, ask them if they have the call number or the name of the book.
+      8. Create a JSON summary of the collected information. The fields to include should be in the following format between the "*" symbols:
+      /*
+       * Object = {
+       *   "method": "check_dataset",
+       *   "context": 'find a book that contains ship',
+       *   "student_id": '5d66ee1de283ad380812600cbc8859789df54b15425ac883a5ff32a941248115',
+       *   "call_number": 'JA66 .H795 1968',
+       *   "name": 'The Obama phenomenon'
+       * }
+       */
+      9. Check again that all information has been collected and that all steps have been observed before continuing.
+      `,
+    }
 
+  ]);
+
+  const [result, setResult] = useState(null);
+
+  const API_URL = 'https://api.openai.com/v1/chat/completions';
+  // const API_KEY = MY_API_KEY;
+  const API_KEY = '';
+
+  console.log(API_KEY)
+  console.log(API_URL)
   // data to be displayed on screen
   const [data, setData] = useState([]);
   const [textInput, setTextInput] = useState("");
 
+  console.log('data is: ')
+  console.log(data)
+
+
   const handleSend = async () => {
-    const prompt = textInput;
+    // const prompt = textInput;
+    console.log('text inpt is')
+    console.log(textInput)
 
     // add user Message after get input
     const userMessage = {
@@ -47,8 +80,42 @@ export default function App() {
       console.log(error);
     })
 
+    console.log(API_KEY, API_URL)
 
+    console.log(JSON.stringify(response))
     botResponse = JSON.stringify(response.data.choices[0].message.content).slice(1, -1);
+
+
+    //call python function here
+    try {
+      const responsePy = await callPythonFunction(botResponse);
+      setResult(responsePy);
+
+      console.log('Response from Python:', responsePy);
+      newObject = {
+        "role": 'user',
+        "content": "Please form an english sentence with this: " + JSON.stringify(responsePy)
+      }
+
+      const newResponse = await axios.post(API_URL, {
+        "model": "gpt-4",
+        "temperature": 0.2,
+        "messages": [...messages, newObject],
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`,
+        },
+      }).catch(error => {
+        console.log(error);
+      })
+
+      console.log('inside loop');
+      console.log(newResponse)
+
+    } catch (error) {
+      console.error(error);
+    }
 
     // Append the bot's response to the messages state
     const botMessage = {
@@ -58,6 +125,7 @@ export default function App() {
     // to whole convo history
     setMessages([...messages, botMessage]);
 
+    console.log('data here is')
     //reset
     setData([...data, { type: "user", 'text': textInput }, { type: "bot", 'text': botResponse }]);
     setTextInput('');
@@ -304,3 +372,5 @@ const styles = StyleSheet.create({
     color: 'white',
   }
 });
+
+
